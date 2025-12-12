@@ -1,5 +1,3 @@
-use std::ptr;
-
 struct XorNode<T> {
     elem: T,
     xor_pointer: usize,
