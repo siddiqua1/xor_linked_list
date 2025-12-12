@@ -370,5 +370,10 @@ mod tests {
             "Size of XorLinkedList<i32> after adding another element: {}",
             std::mem::size_of_val(&list)
         );
+
+        assert_eq!(
+            std::mem::size_of_val(&list),
+            std::mem::size_of::<usize>() * 2
+        );
     }
 }
