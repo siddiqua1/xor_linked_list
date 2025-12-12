@@ -152,7 +152,9 @@ impl<T> XorLinkedList<T> {
     }
 
     pub fn append(&mut self, other: &mut XorLinkedList<T>) {
-        todo!();
+        while let Some(elem) = other.pop_front() {
+            self.push_back(elem);
+        }
     }
 
     pub fn iter(&self) -> XorIter<'_, T> {
@@ -227,6 +229,31 @@ impl<T> XorLinkedList<T> {
 
         Some(consume_element_at_ptr::<T>(old_end))
     }
+
+    pub fn pop_front(&mut self) -> Option<T> {
+        if self.begin == 0 {
+            return None;
+        }
+
+        if self.end == 0 {
+            panic!("Invalid state: begin is set but end is not");
+        }
+
+        if self.begin == self.end {
+            // only one element
+            let elem = consume_element_at_ptr::<T>(self.begin);
+            self.begin = 0;
+            self.end = 0;
+            return Some(elem);
+        }
+
+        let old_begin = self.begin;
+        let next_ptr = get_next_ptr(0, self.begin);
+        point_a_to_b::<T>(next_ptr, self.begin); // clean current begin
+        self.begin = next_ptr;
+
+        Some(consume_element_at_ptr::<T>(old_begin))
+    }
 }
 
 impl<T> Drop for XorLinkedList<T> {
@@ -266,6 +293,30 @@ mod tests {
         assert_eq!(Some(2), list.pop_back());
         assert_eq!(Some(1), list.pop_back());
         assert_eq!(None, list.pop_back());
+    }
+
+    #[test]
+    fn test_pop_front() {
+        let mut list = XorLinkedList::<i32>::new();
+        assert_eq!(None, list.pop_front());
+        list.push_back(1);
+        assert_eq!(list.len(), 1);
+        assert_eq!(Some(1), list.pop_front());
+        assert_eq!(list.len(), 0);
+    }
+
+    #[test]
+    fn test_pop_front2() {
+        let mut list = XorLinkedList::<i32>::new();
+        assert_eq!(None, list.pop_front());
+        list.push_back(1);
+        assert_eq!(Some(1), list.pop_front());
+        assert_eq!(None, list.pop_front());
+        list.push_back(1);
+        list.push_back(2);
+        assert_eq!(Some(1), list.pop_front());
+        assert_eq!(Some(2), list.pop_front());
+        assert_eq!(None, list.pop_front());
     }
 
     #[test]
@@ -334,6 +385,38 @@ mod tests {
         for (i, elem) in list.iter().enumerate() {
             assert_eq!(*elem, i as i32 + 20);
         }
+    }
+
+    #[test]
+    fn test_is_empty() {
+        let mut list = XorLinkedList::<i32>::new();
+        assert!(list.is_empty());
+        list.push_back(1);
+        assert!(!list.is_empty());
+        list.pop_back();
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn test_append() {
+        let mut list1 = XorLinkedList::<i32>::new();
+        list1.push_back(1);
+        list1.push_back(2);
+
+        let mut list2 = XorLinkedList::<i32>::new();
+        list2.push_back(3);
+        list2.push_back(4);
+
+        list1.append(&mut list2);
+
+        let mut iter = list1.iter();
+        assert_eq!(Some(&1), iter.next());
+        assert_eq!(Some(&2), iter.next());
+        assert_eq!(Some(&3), iter.next());
+        assert_eq!(Some(&4), iter.next());
+        assert_eq!(None, iter.next());
+
+        assert!(list2.is_empty());
     }
 
     #[test]
