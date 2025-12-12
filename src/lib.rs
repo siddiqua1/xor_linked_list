@@ -476,6 +476,29 @@ mod tests {
         assert_eq!(Some(&vec![1, 2, 3, 10]), iter.next());
         assert_eq!(Some(&vec![4, 5, 6, 10]), iter.next());
         assert_eq!(None, iter.next());
+
+        assert_eq!(
+            std::mem::size_of_val(&list),
+            std::mem::size_of::<usize>() * 2
+        );
+
+        let mut list2 = XorLinkedList::<Vec<i32>>::new();
+        list2.push_back(vec![7, 8, 9]);
+        list.append(&mut list2);
+        let mut iter = list.iter();
+        assert_eq!(Some(&vec![1, 2, 3, 10]), iter.next());
+        assert_eq!(Some(&vec![4, 5, 6, 10]), iter.next());
+        assert_eq!(Some(&vec![7, 8, 9]), iter.next());
+        assert_eq!(None, iter.next());
+
+        assert_eq!(
+            std::mem::size_of_val(&list),
+            std::mem::size_of::<usize>() * 2
+        );
+        assert_eq!(
+            std::mem::size_of_val(&list2),
+            std::mem::size_of::<usize>() * 2
+        );
     }
 
     #[test]
@@ -498,5 +521,28 @@ mod tests {
         assert_eq!(&[1u8; 1024], iter.next().unwrap());
         assert_eq!(&[2u8; 1024], iter.next().unwrap());
         assert_eq!(None, iter.next());
+
+        assert_eq!(
+            std::mem::size_of_val(&list),
+            std::mem::size_of::<usize>() * 2
+        );
+
+        let mut list2 = XorLinkedList::<[u8; 1024]>::new();
+        list2.push_back([3u8; 1024]);
+        list.append(&mut list2);
+        let mut iter = list.iter();
+        assert_eq!(&[1u8; 1024], iter.next().unwrap());
+        assert_eq!(&[2u8; 1024], iter.next().unwrap());
+        assert_eq!(&[3u8; 1024], iter.next().unwrap());
+        assert_eq!(None, iter.next());
+
+        assert_eq!(
+            std::mem::size_of_val(&list),
+            std::mem::size_of::<usize>() * 2
+        );
+        assert_eq!(
+            std::mem::size_of_val(&list2),
+            std::mem::size_of::<usize>() * 2
+        );
     }
 }
