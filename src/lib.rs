@@ -12,8 +12,8 @@ impl<T> XorNode<T> {
     }
 }
 
-fn get_next_ptr(prev_ptr: usize, curr: usize) -> usize {
-    let node = unsafe { &*(curr as *const XorNode<()>) };
+fn get_next_ptr<T>(prev_ptr: usize, curr: usize) -> usize {
+    let node = unsafe { &*(curr as *const XorNode<T>) };
     let xor_pointer = node.xor_pointer;
     prev_ptr ^ xor_pointer
 }
@@ -85,7 +85,7 @@ where
 
         let element = get_element_at_ptr::<T>(self.curr_ptr);
 
-        let next_ptr = get_next_ptr(self.prev_ptr, self.curr_ptr);
+        let next_ptr = get_next_ptr::<T>(self.prev_ptr, self.curr_ptr);
         self.prev_ptr = self.curr_ptr;
         self.curr_ptr = next_ptr;
 
@@ -124,7 +124,7 @@ where
         }
 
         let element = get_element_at_ptr_mut::<T>(self.curr_ptr);
-        let next_ptr = get_next_ptr(self.prev_ptr, self.curr_ptr);
+        let next_ptr = get_next_ptr::<T>(self.prev_ptr, self.curr_ptr);
         self.prev_ptr = self.curr_ptr;
         self.curr_ptr = next_ptr;
 
@@ -223,7 +223,7 @@ impl<T> XorLinkedList<T> {
         }
 
         let old_end = self.end;
-        let prev_ptr = get_next_ptr(0, self.end);
+        let prev_ptr = get_next_ptr::<T>(0, self.end);
         point_a_to_b::<T>(prev_ptr, self.end); // clean current end
         self.end = prev_ptr;
 
@@ -248,7 +248,7 @@ impl<T> XorLinkedList<T> {
         }
 
         let old_begin = self.begin;
-        let next_ptr = get_next_ptr(0, self.begin);
+        let next_ptr = get_next_ptr::<T>(0, self.begin);
         point_a_to_b::<T>(next_ptr, self.begin); // clean current begin
         self.begin = next_ptr;
 
@@ -456,5 +456,47 @@ mod tests {
             std::mem::size_of_val(&list),
             std::mem::size_of::<usize>() * 2
         );
+    }
+
+    #[test]
+    fn test_vec_i32() {
+        let mut list = XorLinkedList::<Vec<i32>>::new();
+        list.push_back(vec![1, 2, 3]);
+        list.push_back(vec![4, 5, 6]);
+
+        let mut iter = list.iter();
+        assert_eq!(Some(&vec![1, 2, 3]), iter.next());
+        assert_eq!(Some(&vec![4, 5, 6]), iter.next());
+        assert_eq!(None, iter.next());
+
+        for vec in list.iter_mut() {
+            vec.push(10);
+        }
+        let mut iter = list.iter();
+        assert_eq!(Some(&vec![1, 2, 3, 10]), iter.next());
+        assert_eq!(Some(&vec![4, 5, 6, 10]), iter.next());
+        assert_eq!(None, iter.next());
+    }
+
+    #[test]
+    fn test_array_large() {
+        let mut list = XorLinkedList::<[u8; 1024]>::new();
+        list.push_back([0u8; 1024]);
+        list.push_back([1u8; 1024]);
+
+        let mut iter = list.iter();
+        assert_eq!(&[0u8; 1024], iter.next().unwrap());
+        assert_eq!(&[1u8; 1024], iter.next().unwrap());
+        assert_eq!(None, iter.next());
+
+        for array in list.iter_mut() {
+            for byte in array.iter_mut() {
+                *byte += 1;
+            }
+        }
+        let mut iter = list.iter();
+        assert_eq!(&[1u8; 1024], iter.next().unwrap());
+        assert_eq!(&[2u8; 1024], iter.next().unwrap());
+        assert_eq!(None, iter.next());
     }
 }
